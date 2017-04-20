@@ -263,7 +263,8 @@ class ParseServer {
       pushWorker,
       pushControllerQueue,
       hasPushSupport,
-      hasPushScheduledSupport
+      hasPushScheduledSupport,
+      validateThirdPartyAuth
     });
 
     Config.validate(AppCache.get(appId));
