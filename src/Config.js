@@ -73,6 +73,7 @@ export class Config {
     this.generateSessionExpiresAt = this.generateSessionExpiresAt.bind(this);
     this.generateEmailVerifyTokenExpiresAt = this.generateEmailVerifyTokenExpiresAt.bind(this);
     this.revokeSessionOnPasswordReset = cacheInfo.revokeSessionOnPasswordReset;
+    this.validateThirdPartyAuth = cacheInfo.validateThirdPartyAuth;
   }
 
   static validate({

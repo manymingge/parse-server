@@ -141,6 +141,7 @@ class ParseServer {
     schemaCacheTTL = defaults.schemaCacheTTL, // cache for 5s
     enableSingleSchemaCache = false,
     __indexBuildCompletionCallbackForTests = () => {},
+    validateThirdPartyAuth = defaults.validateThirdPartyAuth,
   }) {
     // Initialize the node client SDK automatically
     Parse.initialize(appId, javascriptKey || 'unused', masterKey);

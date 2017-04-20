@@ -25,6 +25,7 @@ export default {
   silent: false,
   enableAnonymousUsers: true,
   allowClientClassCreation: true,
+  validateThirdPartyAuth:true,
   maxUploadSize: '20mb',
   verifyUserEmails: false,
   preventLoginWithUnverifiedEmail: false,

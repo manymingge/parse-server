@@ -66,7 +66,11 @@ RestWrite.prototype.execute = function() {
   }).then(() => {
     return this.handleSession();
   }).then(() => {
-    return this.validateAuthData();
+    if(this.config.validateThirdPartyAuth === false){
+      return ;
+    }else{
+      return this.validateAuthData();
+    }
   }).then(() => {
     return this.runBeforeTrigger();
   }).then(() => {
