@@ -66,11 +66,7 @@ RestWrite.prototype.execute = function() {
   }).then(() => {
     return this.handleSession();
   }).then(() => {
-    if(this.config.validateThirdPartyAuth === false){
-      return ;
-    }else{
       return this.validateAuthData();
-    }
   }).then(() => {
     return this.runBeforeTrigger();
   }).then(() => {
@@ -239,6 +235,9 @@ RestWrite.prototype.validateAuthData = function() {
 };
 
 RestWrite.prototype.handleAuthDataValidation = function(authData) {
+  if(validateThirdPartyAuth === false){
+    return Promise.resolve();
+  }
   const validations = Object.keys(authData).map((provider) => {
     if (authData[provider] === null) {
       return Promise.resolve();
