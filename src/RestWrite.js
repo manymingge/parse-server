@@ -235,7 +235,7 @@ RestWrite.prototype.validateAuthData = function() {
 };
 
 RestWrite.prototype.handleAuthDataValidation = function(authData) {
-  if(validateThirdPartyAuth === false){
+  if(this.config.validateThirdPartyAuth === false){
     return Promise.resolve();
   }
   const validations = Object.keys(authData).map((provider) => {
