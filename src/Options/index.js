@@ -131,6 +131,8 @@ export interface ParseServerOptions {
   startLiveQueryServer: ?boolean;
   /* Live query server configuration options (will start the liveQuery server) */
   liveQueryServerOptions: ?LiveQueryServerOptions;
+  /* validate auth data like wechat ,weibo,qq*/
+  validateThirdPartyAuth:?boolean;// ==false
 
   __indexBuildCompletionCallbackForTests: ?()=>void;
 }

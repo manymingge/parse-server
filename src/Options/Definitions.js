@@ -153,6 +153,12 @@ module.exports.ParseServerOptions = {
     "action": parsers.booleanParser,
     "default": true
   },
+  "validateThirdPartyAuth": {
+    "env": "PARSE_SERVER_VALIDATE_THIRDPARTY_AUTH",
+    "help": "Enable (or disable) THIRDPARTY_AUTH validation, defaults to false",
+    "action": parsers.booleanParser,
+    "default": false
+  },
   "auth": {
     "env": "PARSE_SERVER_AUTH_PROVIDERS",
     "help": "Configuration for your authentication providers, as stringified JSON. See http://docs.parseplatform.org/parse-server/guide/#oauth-and-3rd-party-authentication",
