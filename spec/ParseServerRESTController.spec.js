@@ -1,5 +1,5 @@
-const ParseServerRESTController = require('../src/ParseServerRESTController').ParseServerRESTController;
-const ParseServer = require('../src/ParseServer').default;
+const ParseServerRESTController = require('../lib/ParseServerRESTController').ParseServerRESTController;
+const ParseServer = require('../lib/ParseServer').default;
 const Parse = require('parse/node').Parse;
 
 let RESTController;
@@ -135,10 +135,7 @@ describe('ParseServerRESTController', () => {
     }).then(sessions => {
       expect(sessions.length).toBe(0);
       done();
-    }, (err) => {
-      jfail(err);
-      done();
-    });
+    }, done.fail);
   });
 
   it('ensures a session token is created when passing installationId != cloud', (done) => {

@@ -34,7 +34,7 @@ function graphRequest(path) {
         resolve(data);
       });
     }).on('error', function () {
-      reject('Failed to validate this access token with weixin.');
+      reject('Failed to validate this access token with wechat.');
     });
   });
 }

@@ -1,8 +1,8 @@
-const LoggerController = require('../src/Controllers/LoggerController').LoggerController;
-const WinstonLoggerAdapter = require('../src/Adapters/Logger/WinstonLoggerAdapter').WinstonLoggerAdapter;
-const GridStoreAdapter = require("../src/Adapters/Files/GridStoreAdapter").GridStoreAdapter;
-const Config = require("../src/Config");
-const FilesController = require('../src/Controllers/FilesController').default;
+const LoggerController = require('../lib/Controllers/LoggerController').LoggerController;
+const WinstonLoggerAdapter = require('../lib/Adapters/Logger/WinstonLoggerAdapter').WinstonLoggerAdapter;
+const GridStoreAdapter = require("../lib/Adapters/Files/GridStoreAdapter").GridStoreAdapter;
+const Config = require("../lib/Config");
+const FilesController = require('../lib/Controllers/FilesController').default;
 
 const mockAdapter = {
   createFile: () => {
@@ -17,19 +17,19 @@ const mockAdapter = {
 describe("FilesController",() =>{
   it("should properly expand objects", (done) => {
 
-    var config = new Config(Parse.applicationId);
-    var gridStoreAdapter = new GridStoreAdapter('mongodb://localhost:27017/parse');
-    var filesController = new FilesController(gridStoreAdapter)
-    var result = filesController.expandFilesInObject(config, function(){});
+    const config = Config.get(Parse.applicationId);
+    const gridStoreAdapter = new GridStoreAdapter('mongodb://localhost:27017/parse');
+    const filesController = new FilesController(gridStoreAdapter)
+    const result = filesController.expandFilesInObject(config, function(){});
 
     expect(result).toBeUndefined();
 
-    var fullFile = {
+    const fullFile = {
       type: '__type',
       url: "http://an.url"
     }
 
-    var anObject = {
+    const anObject = {
       aFile: fullFile
     }
     filesController.expandFilesInObject(config, anObject);
