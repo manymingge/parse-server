@@ -7,10 +7,10 @@
 
 "use strict";
 
-import MongoStorageAdapter from '../src/Adapters/Storage/Mongo/MongoStorageAdapter';
+const MongoStorageAdapter = require('../lib/Adapters/Storage/Mongo/MongoStorageAdapter').default;
 const request = require('request');
-const passwordCrypto = require('../src/password');
-const Config = require('../src/Config');
+const passwordCrypto = require('../lib/password');
+const Config = require('../lib/Config');
 const rp = require('request-promise');
 
 function verifyACL(user) {
@@ -101,7 +101,7 @@ describe('Parse.User testing', () => {
     });
   });
 
-  it('user login with non-string username with REST API', (done) => {
+  it('user login with non-string username with REST API (again)', (done) => {
     Parse.User.signUp('asdf', 'zxcv', null, {
       success: () => {
         return rp.post({
@@ -523,6 +523,71 @@ describe('Parse.User testing', () => {
         });
       }
     });
+  });
+
+  it('never locks himself up', async () => {
+    const user = new Parse.User();
+    await user.signUp({
+      username: 'username',
+      password: 'password'
+    });
+    user.setACL(new Parse.ACL());
+    await user.save();
+    await user.fetch();
+    expect(user.getACL().getReadAccess(user)).toBe(true);
+    expect(user.getACL().getWriteAccess(user)).toBe(true);
+    const publicReadACL = new Parse.ACL();
+    publicReadACL.setPublicReadAccess(true);
+
+    // Create an administrator role with a single admin user
+    const role = new Parse.Role('admin', publicReadACL);
+    const admin = new Parse.User();
+    await admin.signUp({
+      username: 'admin',
+      password: 'admin',
+    });
+    role.getUsers().add(admin);
+    await role.save(null, { useMasterKey: true });
+
+    // Grant the admins write rights on the user
+    const acl = user.getACL();
+    acl.setRoleWriteAccess(role, true);
+    acl.setRoleReadAccess(role, true);
+
+    // Update with the masterKey just to be sure
+    await user.save({ ACL: acl }, { useMasterKey: true });
+
+    // Try to update from admin... should all work fine
+    await user.save({ key: 'fromAdmin'}, { sessionToken: admin.getSessionToken() });
+    await user.fetch();
+    expect(user.toJSON().key).toEqual('fromAdmin');
+
+    // Try to save when logged out (public)
+    let failed = false;
+    try {
+      // Ensure no session token is sent
+      await Parse.User.logOut();
+      await user.save({ key: 'fromPublic'});
+    } catch(e) {
+      failed = true;
+      expect(e.code).toBe(Parse.Error.SESSION_MISSING);
+    }
+    expect({ failed }).toEqual({ failed: true });
+
+    // Try to save with a random user, should fail
+    failed = false;
+    const anyUser = new Parse.User();
+    await anyUser.signUp({
+      username: 'randomUser',
+      password: 'password'
+    });
+    try {
+      await user.save({ key: 'fromAnyUser'});
+    } catch(e) {
+      failed = true;
+      expect(e.code).toBe(Parse.Error.SESSION_MISSING);
+    }
+    expect({ failed }).toEqual({ failed: true });
   });
 
   it("current user", (done) => {
@@ -1823,7 +1888,7 @@ describe('Parse.User testing', () => {
     });
   });
 
-  it('should fail linking with existing', (done) => {
+  it('should fail linking with existing through REST', (done) => {
     const provider = getMockFacebookProvider();
     Parse.User._registerAuthenticationProvider(provider);
     Parse.User._logInWith("facebook", {
@@ -2379,7 +2444,7 @@ describe('Parse.User testing', () => {
         }, (error, response, body) => {
           expect(error).toBe(null);
           const b = JSON.parse(body);
-          expect(b.error).toBe('invalid session token');
+          expect(b.error).toBe('Invalid session token');
           request.put({
             headers: {
               'X-Parse-Application-Id': 'test',
@@ -2471,7 +2536,7 @@ describe('Parse.User testing', () => {
             expect(error).toBe(null);
             const b = JSON.parse(body);
             expect(b.code).toEqual(209);
-            expect(b.error).toBe('invalid session token');
+            expect(b.error).toBe('Invalid session token');
             done();
           });
         });
@@ -2513,7 +2578,7 @@ describe('Parse.User testing', () => {
         }, (error,response,body) => {
           const b = JSON.parse(body);
           expect(b.code).toEqual(209);
-          expect(b.error).toBe('invalid session token');
+          expect(b.error).toBe('Invalid session token');
           done();
         });
       });
@@ -2550,7 +2615,7 @@ describe('Parse.User testing', () => {
       done();
     }, function(err) {
       expect(err.code).toBe(Parse.Error.INVALID_SESSION_TOKEN);
-      expect(err.message).toBe('invalid session token');
+      expect(err.message).toBe('Invalid session token');
       done();
     });
   });
@@ -2626,7 +2691,7 @@ describe('Parse.User testing', () => {
     });
   });
 
-  it("invalid session tokens are rejected", (done) => {
+  it("Invalid session tokens are rejected", (done) => {
     Parse.User.signUp("asdf", "zxcv", null, {
       success: function() {
         request.get({
@@ -2639,7 +2704,7 @@ describe('Parse.User testing', () => {
           },
         }, (error, response, body) => {
           expect(body.code).toBe(209);
-          expect(body.error).toBe('invalid session token');
+          expect(body.error).toBe('Invalid session token');
           done();
         })
       }
@@ -3640,5 +3705,37 @@ describe('Parse.User testing', () => {
       // only one session in the end
       expect(results.length).toBe(1);
     }).then(done, done.fail);
+  });
+
+  describe('issue #4897', () => {
+    it_only_db('mongo')("should be able to login with a legacy user (no ACL)", async () => {
+      // This issue is a side effect of the locked users and legacy users which don't have ACL's
+      // In this scenario, a legacy user wasn't be able to login as there's no ACL on it
+      const database = Config.get(Parse.applicationId).database;
+      const collection = await database.adapter._adaptiveCollection('_User');
+      await collection.insertOne({
+        "_id": "ABCDEF1234",
+        "name": "<some_name>",
+        "email": "<some_email>",
+        "username": "<some_username>",
+        "_hashed_password": "<some_password>",
+        "_auth_data_facebook": {
+          "id": "8675309",
+          "access_token": "jenny"
+        },
+        "sessionToken": "<some_session_token>",
+      });
+      const provider = getMockFacebookProvider();
+      Parse.User._registerAuthenticationProvider(provider);
+      const model = await Parse.User._logInWith("facebook", {});
+      expect(model.id).toBe('ABCDEF1234');
+      ok(model instanceof Parse.User, "Model should be a Parse.User");
+      strictEqual(Parse.User.current(), model);
+      ok(model.extended(), "Should have used subclass.");
+      strictEqual(provider.authData.id, provider.synchronizedUserId);
+      strictEqual(provider.authData.access_token, provider.synchronizedAuthToken);
+      strictEqual(provider.authData.expiration_date, provider.synchronizedExpiration);
+      ok(model._isLinked("facebook"), "User should be linked to facebook");
+    });
   });
 });
