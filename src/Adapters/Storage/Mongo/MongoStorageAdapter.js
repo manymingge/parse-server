@@ -581,7 +581,7 @@ export class MongoStorageAdapter implements StorageAdapter {
       .then(results => {
         results.forEach(result => {
           if (result.hasOwnProperty('_id')) {
-            if (isPointerField && result._id) {
+            if (isPointerField && result._id && result._id.split('$')[1]) {
               result._id = result._id.split('$')[1];
             }
             if (result._id == null || _.isEmpty(result._id)) {
